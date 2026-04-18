@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="sk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kvíz – Ochrana spotrebiteľa</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: 'Inter', sans-serif; background: #1a1a2e; color: #e0e0e0; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
+.container { width: 100%; max-width: 800px; }
+h1 { text-align: center; font-size: 1.6rem; color: #a78bfa; margin-bottom: 30px; }
+.stats-bar { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.9rem; color: #a0a0b0; }
+.stats-bar span { background: #16213e; padding: 5px 14px; border-radius: 20px; }
+.correct { color: #4ade80; }
+.incorrect { color: #f87171; }
+.progress-bar-wrap { background: #16213e; border-radius: 10px; height: 8px; margin-bottom: 28px; overflow: hidden; }
+.progress-bar-fill { height: 100%; background: linear-gradient(90deg, #7c3aed, #a78bfa); border-radius: 10px; transition: width 0.4s ease; }
+.card { background: #16213e; border-radius: 18px; padding: 40px 36px; box-shadow: 0 8px 32px rgba(0,0,0,0.4); text-align: center; transition: all 0.3s ease; }
+.card.flash-correct { box-shadow: 0 0 0 3px #4ade80, 0 8px 32px rgba(0,0,0,0.4); background: #0f2d1f; }
+.card.flash-incorrect { box-shadow: 0 0 0 3px #f87171, 0 8px 32px rgba(0,0,0,0.4); background: #2d0f0f; }
+.question-number { font-size: 0.85rem; color: #6b6b8a; margin-bottom: 24px; text-transform: uppercase; letter-spacing: 1px; }
+.statement { font-size: 1.15rem; line-height: 1.7; color: #e0e0e0; margin-bottom: 36px; min-height: 80px; }
+.buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
+.btn { padding: 14px 40px; border: none; border-radius: 12px; font-size: 1rem; font-family: 'Inter', sans-serif; font-weight: 600; cursor: pointer; transition: all 0.2s ease; }
+.btn:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.btn-true { background: #166534; color: #4ade80; }
+.btn-false { background: #7f1d1d; color: #f87171; }
+.btn-restart { background: #1e3a5f; color: #93c5fd; }
+.btn-retry { background: #3b1f5e; color: #c4b5fd; }
+.feedback { margin-top: 24px; padding: 12px 20px; border-radius: 10px; font-size: 0.95rem; font-weight: 600; display: none; }
+.feedback.correct { background: #14532d; color: #4ade80; }
+.feedback.incorrect { background: #450a0a; color: #f87171; }
+.results { display: none; text-align: center; }
+.results h2 { font-size: 1.8rem; color: #a78bfa; margin-bottom: 10px; }
+.percentage { font-size: 4rem; font-weight: 700; color: #fff; margin: 16px 0 8px; }
+.result-message { font-size: 1.1rem; color: #a0a0b0; margin-bottom: 30px; line-height: 1.6; }
+.result-detail { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; flex-wrap: wrap; }
+.result-detail div { background: #16213e; border-radius: 12px; padding: 16px 28px; font-size: 1rem; }
+.result-buttons { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-top: 10px; }
+.start-screen { text-align: center; }
+.start-screen p { color: #a0a0b0; margin-bottom: 30px; font-size: 1rem; line-height: 1.6; }
+.btn-start { background: linear-gradient(135deg, #7c3aed, #a78bfa); color: #fff; font-size: 1.1rem; padding: 16px 50px; }
+@media (max-width: 500px) { .card { padding: 28px 20px; } .statement { font-size: 1rem; } .btn { padding: 12px 28px; } .percentage { font-size: 3rem; } }
+</style>
+</head>
+<body>
+<div class="container">
+<h1>&#9878; Kvíz – Ochrana spotrebiteľa v SR</h1>
+
+<div class="card start-screen" id="startScreen">
+<p>Otestuj svoje vedomosti z ochrany spotrebiteľa.<br>Zobrazí sa ti séria výrokov – označ každý ako <strong>Pravda</strong> alebo <strong>Nepravda</strong>.</p>
+<button class="btn btn-start" onclick="startQuiz(allQuestions)">🚀 Spustiť kvíz</button>
+</div>
+
+<div id="quizSection" style="display:none;">
+<div class="stats-bar">
+<span>Otázka <strong id="qNum">1</strong> / <strong id="qTotal">0</strong></span>
+<span>✅ <span class="correct" id="correctCount">0</span> &nbsp;|&nbsp; ❌ <span class="incorrect" id="incorrectCount">0</span></span>
+</div>
+<div class="progress-bar-wrap">
+<div class="progress-bar-fill" id="progressFill" style="width:0%"></div>
+</div>
+<div class="card" id="quizCard">
+<div class="question-number" id="questionNumber"></div>
+<div class="statement" id="statementText"></div>
+<div class="buttons" id="answerButtons">
+<button class="btn btn-true" onclick="answer(true)">✅ Pravda</button>
+<button class="btn btn-false" onclick="answer(false)">❌ Nepravda</button>
+</div>
+<div class="feedback" id="feedback"></div>
+</div>
+</div>
+
+<div class="card results" id="resultsSection">
+<h2>🎓 Výsledky kvízu</h2>
+<div class="percentage" id="percentageText">0%</div>
+<div class="result-message" id="resultMessage"></div>
+<div class="result-detail">
+<div>✅ Správne: <strong id="finalCorrect">0</strong></div>
+<div>❌ Nesprávne: <strong id="finalIncorrect">0</strong></div>
+<div>📋 Celkom: <strong id="finalTotal">0</strong></div>
+</div>
+<div class="result-buttons">
+<button class="btn btn-restart" onclick="startQuiz(allQuestions)">Opakovať celý kvíz</button>
+<button class="btn btn-retry" id="retryWrongBtn" onclick="retryWrong()">Opakovať chybné otázky</button>
+</div>
+</div>
+</div>
+
+<script>
+var allQuestions = [
+  // ── BLOK 1: Základné pojmy a pramene práva ──
+  {text:"Spotrebiteľské právo je kodifikovaným právnym odvetvím.", answer:false},
+  {text:"Ochrana spotrebiteľa je zabezpečovaná normami súkromného i verejného práva.", answer:true},
+  {text:"Ochrana spotrebiteľa narúša zásadu pacta sunt servanda.", answer:false},
+  {text:"Ochrana spotrebiteľa narúša zásadu rovnosti subjektov.", answer:true},
+  {text:"Ochrana spotrebiteľa narúša dispozitívnosť právnych predpisov súkromného práva.", answer:true},
+  {text:"Ochrana spotrebiteľa narúša kogentný charakter právnych predpisov súkromného práva.", answer:false},
+  {text:"Ochrana spotrebiteľa ako slabšej zmluvnej strany vyplýva priamo z Ústavy SR.", answer:false},
+  {text:"Osobitným predpisom ochrany spotrebiteľa je zákon o ochrane spotrebiteľa.", answer:true},
+  {text:"Všeobecnými predpismi spotrebiteľského práva sú OZ a zákon o ochrane spotrebiteľa.", answer:false},
+  {text:"Všeobecnými predpismi spotrebiteľského práva sú OZ a zákon o spotrebiteľských úveroch.", answer:true},
+  {text:"Spotrebiteľské právo obsahuje taktiež úpravu inštitucionálneho zabezpečenia ochrany spotrebiteľa.", answer:true},
+  {text:"Ochrana spotrebiteľa je zabezpečovaná predpismi hmotného i procesného práva.", answer:true},
+
+  // ── BLOK 2: Pojmy spotrebiteľ a dodávateľ ──
+  {text:"Pojmy dodávateľ a spotrebiteľ sú jednotne upravené v zákone o ochrane spotrebiteľa.", answer:false},
+  {text:"Slovenský právny poriadok obsahuje viacero definícií pojmu spotrebiteľ.", answer:true},
+  {text:"Spotrebiteľom môže byť len fyzická osoba, ktorá nekoná v rámci svojej podnikateľskej činnosti.", answer:true},
+  {text:"Aj fyzickej osobe, ktorá je podnikateľom, možno priznať ochranu spotrebiteľa.", answer:true},
+  {text:"Ak spotrebiteľ predstiera, že je podnikateľom, môže sa napriek tomu dovolávať ochrany spotrebiteľa.", answer:false},
+  {text:"Priemerný spotrebiteľ je v rozumnej miere dobre informovaný, vnímavý a obozretný.", answer:true},
+  {text:"Dodávateľom môže byť len právnická osoba.", answer:false},
+  {text:"Dodávateľom nemôže byť štát ani verejný orgán.", answer:false},
+  {text:"Predmetom spotrebiteľského práva a ochrany spotrebiteľa je ochrana práv a právom chránených záujmov všetkých slabších subjektov.", answer:false},
+
+  // ── BLOK 3: Spotrebiteľské zmluvy – všeobecne ──
+  {text:"Dozor nad uplatňovaním prijatej legislatívy v oblasti ochrany spotrebiteľa vykonáva predovšetkým Slovenská obchodná inšpekcia.", answer:true},
+  {text:"Ochrana spotrebiteľa je poskytovaná aj pri bezodplatných zmluvách.", answer:true},
+  {text:"Ochrana spotrebiteľa je poskytovaná len pri odplatných zmluvách.", answer:false},
+  {text:"Ustanovenia OZ o ochrane spotrebiteľa sa aplikujú aj na spotrebiteľské zmluvy uzavreté podľa Obchodného zákonníka.", answer:true},
+  {text:"Spotrebiteľská zmluva je aj zmluva uzatvorená medzi spotrebiteľom a dodávateľom, ktorá sa v zmysle § 262 OBZ spravuje režimom OBZ.", answer:false},
+  {text:"Spotrebiteľská zmluva je len zmluva uzatvorená podľa ôsmej časti OZ.", answer:false},
+  {text:"Ustanovenia o spotrebiteľskej zmluve sú transpozíciou Smernice Rady 93/13 EHS o nekalých podmienkach v spotrebiteľských zmluvách.", answer:false},
+  {text:"Zákonom stanovená minimálna veľkosť písma spotrebiteľských zmlúv sa vzťahuje len na ustanovenia hlavnej zmluvy.", answer:false},
+  {text:"Zákonom stanovená minimálna veľkosť písma spotrebiteľských zmlúv sa vzťahuje len na zmluvy uzavreté v písomnej forme.", answer:true},
+  {text:"Zákonom stanovená minimálna veľkosť písma spotrebiteľských zmlúv sa vzťahuje aj na všeobecné obchodné podmienky.", answer:true},
+  {text:"V prípade poskytnutia plnenia spotrebiteľovi, ktoré si tento nevyžiadal, môže spotrebiteľ zaplatiť cenu za jeho dodanie; v opačnom prípade je povinný tovar vrátiť.", answer:false},
+
+  // ── BLOK 4: Neprijateľné zmluvné podmienky ──
+  {text:"Občiansky zákonník v oblasti ochrany spotrebiteľa upravuje výlučne ochranu pred neprijateľnými zmluvnými podmienkami a tzv. spotrebiteľské kúpne zmluvy.", answer:false},
+  {text:"Kontrole neprijateľnosti zmluvných podmienok podliehajú všetky spotrebiteľské zmluvy.", answer:false},
+  {text:"Kontrole neprijateľnosti zmluvných podmienok podliehajú len spotrebiteľské zmluvy v užšom zmysle.", answer:true},
+  {text:"Neprijateľnosť zmluvnej podmienky spôsobuje neplatnosť spotrebiteľskej zmluvy.", answer:false},
+  {text:"OZ vymedzuje neprijateľné zmluvné podmienky prostredníctvom generálnej klauzuly a demonštratívneho výpočtu vybraných neprijateľných zmluvných podmienok.", answer:true},
+  {text:"OZ vymedzuje neprijateľné zmluvné podmienky prostredníctvom generálnej klauzuly a taxatívneho výpočtu vybraných neprijateľných zmluvných podmienok.", answer:false},
+  {text:"Ochrana spotrebiteľa podľa OZ – demonštratívny výpočet neprijateľných podmienok je uvedený v zákone č. 250/2007 Z. z. o ochrane spotrebiteľa.", answer:false},
+  {text:"Podmienky spotrebiteľských zmlúv sú neplatné len vtedy, ak sa ich dotknutý účastník zmluvy dovolá.", answer:false},
+  {text:"V prospech spotrebiteľa sa prenáša na dodávateľa dôkazné bremeno o tom, že ustanovenia v spotrebiteľskej zmluve sa nepovažujú za individuálne dojednané.", answer:false},
+  {text:"Neplatný je právny úkon v prípade, ak niekto zneužije rozumovú vyspelosť spotrebiteľa.", answer:false},
+  {text:"Ak dodávateľ poruší práva spotrebiteľa, môže sa tento bez ďalšieho domáhať primeraného finančného zadosťučinenia.", answer:false},
+
+  // ── BLOK 5: Zabezpečenie spotrebiteľských záväzkov ──
+  {text:"V zmysle zákona o ochrane spotrebiteľa nemožno zabezpečiť spotrebiteľský záväzok záložným právom.", answer:false},
+  {text:"Ak záložné právo zabezpečuje záväzok zo spotrebiteľskej zmluvy, môže sa záložný veriteľ uspokojiť priamym nadobudnutím vlastníckeho práva, ale iba so súhlasom spotrebiteľa.", answer:true},
+  {text:"Spotrebiteľský záväzok nemožno zabezpečiť zabezpečovacím prevodom práva.", answer:true},
+  {text:"Spotrebiteľský záväzok nemožno zabezpečiť ručením.", answer:false},
+  {text:"Spotrebiteľský záväzok nemožno zabezpečiť zmenkou.", answer:true},
+  {text:"Zabezpečenie spotrebiteľského záväzku zmenkou je prípustné, ak s tým spotrebiteľ súhlasí.", answer:false},
+  {text:"Dohodu o zrážkach zo mzdy možno v spotrebiteľských zmluvách uzatvoriť, avšak len v osobitnej listine.", answer:true},
+
+  // ── BLOK 6: Zodpovednosť za vady a reklamácia ──
+  {text:"Predávajúci zodpovedá za vady, ktoré má predaná vec pri prevzatí kupujúcim, ako i za tie, ktoré sa vyskytnú počas záručnej doby.", answer:true},
+  {text:"Predávajúci nezodpovedá za vady, na ktoré kupujúceho upozornil za podmienky, že došlo k zníženiu kúpnej ceny.", answer:true},
+  {text:"V prípade, ak predávajúci pri kúpe veci kupujúceho upozorní na vady veci, nemožno viac reklamovať.", answer:false},
+  {text:"Zákonom stanovenú záručnú dobu možno dohodou strán zmeniť.", answer:true},
+  {text:"Záručná doba pri použitej veci je minimálne 12 mesiacov, ak sa strany nedohodli inak.", answer:true},
+  {text:"Záručná doba pri veciach, ktoré sa rýchlo kazia, je 24 hodín.", answer:false},
+  {text:"Záručná doba sa predlžuje o čas, počas ktorého bola vec v oprave.", answer:true},
+  {text:"Ak dôjde k výmene celej veci, nová záručná doba nezačína plynúť od začiatku.", answer:false},
+  {text:"Záručná doba je dobou premlčacou, čo znamená, že jej uplynutím právo nezaniká.", answer:false},
+  {text:"Právna úprava zodpovednosti za vady je upravená výlučne v OZ.", answer:false},
+  {text:"Reklamáciu musí predávajúci vybaviť najneskôr do 30 dní.", answer:true},
+  {text:"Reklamáciu možno uplatniť v ktorejkoľvek prevádzke predávajúceho.", answer:true},
+  {text:"Reklamáciu uplatnenú do 6 mesiacov od kúpy možno vybaviť zamietnutím len na základe odborného posúdenia.", answer:false},
+  {text:"Reklamáciu uplatnenú po 12 mesiacoch od kúpy možno zamietnuť aj bez odborného posúdenia.", answer:true},
+  {text:"Náklady odborného posúdenia môže znášať spotrebiteľ.", answer:true},
+  {text:"Náklady na odborné posúdenie reklamácie znáša vždy predávajúci, ak odborné posúdenie preukázalo vadu.", answer:true},
+  {text:"Predávajúci je povinný vydať spotrebiteľovi potvrdenie o vybavení reklamácie.", answer:true},
+  {text:"Ak sa opätovne vyskytne odstrániteľná vada, má kupujúci právo odstúpiť od zmluvy.", answer:true},
+  {text:"Ak je pri predaji tovaru v obchode možné vadu odstrániť, má spotrebiteľ právo na bezplatnú opravu veci. Ak predávajúci vec neopraví v 30-dňovej lehote, má spotrebiteľ právo odstúpiť od zmluvy.", answer:true},
+  {text:"Ak vadu odstrániť nemožno, záleží od toho, či táto bráni riadnemu užívaniu alebo nie; ak bráni, má kupujúci právo na výmenu alebo na odstúpenie od zmluvy.", answer:true},
+
+  // ── BLOK 7: Zmluvy uzavreté mimo prevádzkových priestorov a na diaľku ──
+  {text:"Zmluvou uzavretou mimo prevádzkových priestorov je aj zmluva uzavretá za súčasnej fyzickej prítomnosti predávajúceho a spotrebiteľa na mieste, ktoré nie je prevádzkovým priestorom predávajúceho.", answer:true},
+  {text:"Zmluvou uzavretou na diaľku je aj zmluva uzavretá počas predajnej akcie alebo v súvislosti s ňou.", answer:true},
+  {text:"Zákon o ochrane spotrebiteľa pri dištančnom predaji obsahuje taxatívny výpočet zmlúv, na ktoré sa vzťahuje jeho právna úprava.", answer:false},
+  {text:"Spotrebiteľ môže od zmluvy uzavretej mimo prevádzkových priestorov odstúpiť do 14 dní odo dňa uzavretia zmluvy o dodaní tovaru.", answer:true},
+  {text:"Pri odstúpení od zmluvy znáša spotrebiteľ len náklady na vrátenie tovaru predávajúcemu.", answer:true},
+
+  // ── BLOK 8: Predajné akcie ──
+  {text:"Organizátor predajnej akcie musí v pozvánke uviesť svoje identifikačné údaje.", answer:true},
+  {text:"Organizátor predajnej akcie je povinný oznámiť uskutočnenie predajnej akcie inšpektorátu práce.", answer:true},
+  {text:"Organizátor predajnej akcie môže odmietnuť prepravu spotrebiteľa, ktorý s predávajúcim neuzavrie zmluvu.", answer:false},
+  {text:"Organizátor predajnej akcie môže odmietnuť vstup na akciu osobe, ktorá nemá pozvánku.", answer:true},
+
+  // ── BLOK 9: Spotrebiteľské úvery ──
+  {text:"Zákon o spotrebiteľských úveroch sa vzťahuje na všetky zmluvy, ktorých predmetom je poskytnutie finančných prostriedkov spotrebiteľovi.", answer:false},
+  {text:"Spotrebiteľský úver nemožno poskytnúť bezhotovostne.", answer:false},
+  {text:"Zákon o spotrebiteľských úveroch upravuje vybrané náležitosti, ktorých absencia spôsobuje bezúročnosť a bezpoplatkovosť poskytnutého úveru alebo pôžičky.", answer:true},
+  {text:"Zmluva o spotrebiteľskom úvere nemusí mať písomnú formu, ak výška úveru nepresahuje 500 EUR.", answer:false},
+  {text:"Spotrebiteľ môže od zmluvy o spotrebiteľskom úvere odstúpiť do 14 dní od jej uzavretia bez uvedenia dôvodu.", answer:true},
+  {text:"Pri odstúpení od zmluvy o spotrebiteľskom úvere je spotrebiteľ povinný vrátiť aj všetky poplatky a úroky za celú dobu trvania zmluvy.", answer:false},
+  {text:"Veriteľ môže pri predčasnom splatení spotrebiteľského úveru požadovať kompenzáciu maximálne do výšky 1 % zo splatenej sumy.", answer:true},
+  {text:"Zákon o spotrebiteľských úveroch sa vzťahuje aj na hypotekárne úvery na bývanie.", answer:false},
+  {text:"Úver na bývanie možno poskytnúť maximálne do výšky 80 % hodnoty nehnuteľnosti.", answer:true},
+
+  // ── BLOK 10: Zájazdy a cestovanie ──
+  {text:"Cestovná agentúra zodpovedá spotrebiteľovi za porušenie zmluvy o zájazde rovnako ako cestovná kancelária.", answer:false},
+  {text:"Spotrebiteľ môže postúpiť zmluvu o zájazde na inú osobu, pričom je povinný nahradiť súvisiace náklady.", answer:true},
+  {text:"Právo na reklamáciu zájazdu možno uplatniť do 2 rokov od skončenia zájazdu.", answer:true},
+  {text:"Pri meškaní letu nad 3 hodiny má cestujúci vždy nárok na náhradu vo výške 600 EUR.", answer:false}
+    
+];
+
+var currentQuestions = [];
+var currentIndex = 0;
+var correctCount = 0;
+var incorrectCount = 0;
+var wrongQuestions = [];
+var answered = false;
+
+function shuffle(arr) {
+    return arr.slice().sort(function() { return Math.random() - 0.5; });
+}
+
+function startQuiz(questions) {
+    currentQuestions = shuffle(questions);
+    currentIndex = 0;
+    correctCount = 0;
+    incorrectCount = 0;
+    wrongQuestions = [];
+    answered = false;
+    document.getElementById("startScreen").style.display = "none";
+    document.getElementById("resultsSection").style.display = "none";
+    document.getElementById("quizSection").style.display = "block";
+    document.getElementById("qTotal").textContent = currentQuestions.length;
+    showQuestion();
+}
+
+function showQuestion() {
+    answered = false;
+    var q = currentQuestions[currentIndex];
+    var total = currentQuestions.length;
+    document.getElementById("qNum").textContent = currentIndex + 1;
+    document.getElementById("questionNumber").textContent = "Výrok " + (currentIndex + 1) + " z " + total;
+    document.getElementById("statementText").textContent = q.text;
+    document.getElementById("progressFill").style.width = ((currentIndex / total) * 100) + "%";
+    document.getElementById("correctCount").textContent = correctCount;
+    document.getElementById("incorrectCount").textContent = incorrectCount;
+    var feedback = document.getElementById("feedback");
+    feedback.style.display = "none";
+    feedback.className = "feedback";
+    document.getElementById("answerButtons").style.display = "flex";
+    document.getElementById("quizCard").className = "card";
+}
+
+function answer(userAnswer) {
+    if (answered) return;
+    answered = true;
+    var q = currentQuestions[currentIndex];
+    var isCorrect = userAnswer === q.answer;
+    var card = document.getElementById("quizCard");
+    var feedback = document.getElementById("feedback");
+    if (isCorrect) {
+        correctCount++;
+        card.className = "card flash-correct";
+        feedback.className = "feedback correct";
+        feedback.textContent = "✅ Správne!";
+    } else {
+        incorrectCount++;
+        card.className = "card flash-incorrect";
+        feedback.className = "feedback incorrect";
+        feedback.textContent = "❌ Nesprávne! Správna odpoveď je: " + (q.answer ? "PRAVDA" : "NEPRAVDA");
+        wrongQuestions.push(q);
+    }
+    feedback.style.display = "block";
+    document.getElementById("answerButtons").style.display = "none";
+    document.getElementById("correctCount").textContent = correctCount;
+    document.getElementById("incorrectCount").textContent = incorrectCount;
+    setTimeout(function() {
+        currentIndex++;
+        if (currentIndex < currentQuestions.length) {
+            showQuestion();
+        } else {
+            showResults();
+        }
+    }, 500);
+}
+
+function showResults() {
+    document.getElementById("quizSection").style.display = "none";
+    document.getElementById("resultsSection").style.display = "block";
+    var total = currentQuestions.length;
+    var pct = Math.round((correctCount / total) * 100);
+    document.getElementById("percentageText").textContent = pct + "%";
+    document.getElementById("finalCorrect").textContent = correctCount;
+    document.getElementById("finalIncorrect").textContent = incorrectCount;
+    document.getElementById("finalTotal").textContent = total;
+    var message = "";
+    if (pct < 50) {
+        message = "Zápočet by si dnes nedostal. Ešte poriadne zopakuj!";
+    } else if (pct < 65) {
+        message = "Na zápočet by to možno stačilo, ale radšej ešte zopakuj!";
+    } else if (pct < 75) {
+        message = "Už to celkom vieš! Pár opakovaní a bude to!";
+    } else if (pct < 95) {
+        message = "Výborné výsledky! Si dobre pripravený!";
+    } else if (pct < 100) {
+        message = "Takmer dokonalé! Majster spotrebiteľského práva!";
+    } else {
+        message = "100%! Zo spotrebiteľa môžeš čakať aj A-čko!";
+    }
+    document.getElementById("resultMessage").textContent = message;
+    if (wrongQuestions.length > 0) {
+        document.getElementById("retryWrongBtn").style.display = "inline-block";
+    } else {
+        document.getElementById("retryWrongBtn").style.display = "none";
+    }
+}
+
+function retryWrong() {
+    if (wrongQuestions.length > 0) {
+        startQuiz(wrongQuestions);
+    }
+}
+</script>
+</body>
+</html>
